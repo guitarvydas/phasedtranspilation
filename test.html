@@ -46,7 +46,7 @@ const testsrc = String.raw`
 `;
 
 const pregrammar = String.raw`
-Test {
+Phase1 {
 Main = Component+ ID
 Component = "component" ":" string
 ID = "id" ":" string
@@ -55,12 +55,9 @@ dq = "\""
 }
 `;
 
-const postgrammar = String.raw`
-Test {
-Main = Component+
-Component = "component" ":" string
-string = dq (~dq any)* dq
-dq = "\""
+const postgrammar = pregrammar + String.raw`
+Phase2 <: Phase1 {
+Main := Component+
 }
 `;
 
@@ -80,22 +77,42 @@ dq = "\""
       }
   }
 
-const prefmt = String.raw`
-Test {
+// wanted:...
+// const prefmt = `
+// Phase1 {
+// Main [Component+ ID] = ‛⟨Component⟩⟨ID⟩’
+// Component [kcomponent kcolon s] = ‛\n⟨kcomponent⟩⟨kcolon⟩⟨s⟩’
+// ID [kid kcolon s] = ‛⟨setID (s)⟩’
+// string [dq1 c* dq2] = ‛⟨dq1⟩⟨c⟩⟨dq2⟩’
+// dq [c] = ‛⟨c⟩’
+// }
+//   `;
+
+// template string manipulation...
+  const main1 = `
 Main [Component+ ID] = ‛⟨Component⟩⟨ID⟩’
-Component [kcomponent kcolon s] = ‛⟨kcomponent⟩⟨kcolon⟩⟨s⟩’
+Component [kcomponent kcolon s] = ‛\n⟨kcomponent⟩⟨kcolon⟩⟨s⟩’
+`;
+  
+const innards = `
 ID [kid kcolon s] = ‛⟨setID (s)⟩’
 string [dq1 c* dq2] = ‛⟨dq1⟩⟨c⟩⟨dq2⟩’
 dq [c] = ‛⟨c⟩’
+`;
+  
+const prefmt = String.raw`
+Phase1 {
+${main1}
+${innards}
 }
 `;
+//...
 
-const postfmt = String.raw`
-Test {
+const postfmt = prefmt + String.raw`
+Phase2 {
 Main [Component+] = ‛⟨Component⟩’
 Component [kcomponent kcolon s] = ‛\n⟨kcomponent⟩⟨kcolon⟩⟨maybeMapSelf (s)⟩’
-string [dq1 c* dq2] = ‛⟨dq1⟩⟨c⟩⟨dq2⟩’
-dq [c] = ‛⟨c⟩’
+${innards}
 }
 `;
 
@@ -114,10 +131,10 @@ dq [c] = ‛⟨c⟩’
   }
   
   function generate () {
-      [r, phase1] = test (testsrc, "Test", pregrammar, prefmt);
-      console.log (`prefmt done with return code ${r} and /${phase1}/`);
-      [r2, phase2] = test (phase1, "Test", postgrammar, postfmt);
-      console.log (`postfmt done with return code ${r2} and /${phase2}/ selfid = /${selfid}/`);
+      [r, phase1result] = test (testsrc, "Phase1", pregrammar, prefmt);
+      console.log (`prefmt done with return code ${r} and /${phase1result}/`);
+      [r2, phase2result] = test (phase1result, "Phase2", postgrammar, postfmt);
+      console.log (`postfmt done with return code ${r2} and /${phase2result}/ selfid = /${selfid}/`);
   }
 
   </script>
